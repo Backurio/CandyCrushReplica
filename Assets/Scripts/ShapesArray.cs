@@ -74,12 +74,73 @@ public class ShapesArray
 		return matches.Distinct();
 	}
 
+	private bool ContainsDestroyRowColumnBonus(IEnumerable<GameObject> matches)
+	{
+		if (matches.Count() >= Constants.MinimumMatches)
+		{
+			foreach (var go in matches)
+			{
+				if (BonusTypeUtilities.ContainsDestroyWholeRowColumn(go.GetComponent<Shape>().Bonus))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	private IEnumerable<GameObject> GetEntireRow(GameObject go)
+	{
+		List<GameObject> matches = new List<GameObject>();
+		int row = go.GetComponent<Shape>().Row;
+		for (int column = 0; column < Constants.Columns; column++)
+		{
+			matches.Add(shapes[row, column]);
+		}
+
+		return matches;
+	}
+
+	private IEnumerable<GameObject> GetEntireColumn(GameObject go)
+	{
+		List<GameObject> matches = new List<GameObject>();
+		int column = go.GetComponent<Shape>().Column;
+		for (int row = 0; row < Constants.Rows; row++)
+		{
+			matches.Add(shapes[row, column]);
+		}
+
+		return matches;
+	}
+
 	public MatchesInfo GetMatches(GameObject go)
 	{
 		MatchesInfo matchesInfo = new MatchesInfo();
 
 		var horizontalMatches = GetMatchesHorizontally(go);
-		// todo: continue here
+		if (ContainsDestroyRowColumnBonus(horizontalMatches))
+		{
+			horizontalMatches = GetEntireRow(go);
+			if (!BonusTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BonusesContained))
+			{
+				matchesInfo.BonusesContained |= BonusType.DestroyWholeRowColumn;
+			}
+		}
+		matchesInfo.AddObjectRange(horizontalMatches);
+
+		var verticalMatches = GetMatchesVertically(go);
+		if (ContainsDestroyRowColumnBonus(verticalMatches))
+		{
+			horizontalMatches = GetEntireColumn(go);
+			if (!BonusTypeUtilities.ContainsDestroyWholeRowColumn(matchesInfo.BonusesContained))
+			{
+				matchesInfo.BonusesContained |= BonusType.DestroyWholeRowColumn;
+			}
+		}
+		matchesInfo.AddObjectRange(verticalMatches);
+
+		return matchesInfo;
 	}
 
 	private IEnumerable<GameObject> GetMatchesHorizontally(GameObject go)
@@ -172,4 +233,6 @@ public class ShapesArray
 
 		return matches.Distinct();
 	}
+
+	// todo: continue here
 }
